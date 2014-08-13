@@ -66,8 +66,8 @@ app.route('/api')
 })
 .post(function (request, response) {
     console.log('Received POST request:');
+    // TODO: What if the body that is sent is huge?
     var body = request.body;
-    console.log(body);
 
     var transaction = validateAndCreateTransaction(body.description, body.amount);
     if (transaction) {

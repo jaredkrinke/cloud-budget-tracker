@@ -1,4 +1,20 @@
-﻿var needle = require('needle');
+﻿// Stream from a string
+var Readable = require('stream').Readable;
+var util = require('util');
+util.inherits(StringStream, Readable);
+
+function StringStream(content) {
+    Readable.call(this, { encoding: 'utf8' });
+    this.content = content;
+    this.done = false;
+}
+
+StringStream.prototype._read = function () {
+    this.push(this.done ? null : this.content);
+};
+
+// Test requests
+var needle = require('needle');
 var requests = [
     {
         method: 'get',
@@ -22,8 +38,7 @@ var requests = [
     },
     {
         method: 'post',
-        // TODO: How to make this the exact body that is passed (to verify JSON parsing)?
-        data: '{Also fail!!!"' + "'",
+        data: new StringStream('{Also fail!!!"' + "'"),
     },
 ];
 
@@ -34,6 +49,7 @@ var processRequests = function (requests) {
             request.method,
             'http://localhost:8888/api',
             request.data,
+            { json: false },
             function (error, response, body) {
                 if (error) {
                     console.log('ERROR:');
