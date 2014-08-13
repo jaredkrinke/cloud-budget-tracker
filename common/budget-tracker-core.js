@@ -28,13 +28,4 @@
         }
         return null;
     };
-
-    // TODO: Needed?
-    //exports.validateDate = function (text) {
-    //    var date = new Date(text);
-    //    if (!isNaN(date.getTime())) {
-    //        return date;
-    //    }
-    //    return null;
-    //};
 })(typeof (exports) === 'undefined' ? (budgetTrackerCore = {}) : exports);
