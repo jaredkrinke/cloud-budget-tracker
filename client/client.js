@@ -3,7 +3,6 @@
     var currencySymbol = '$';
 
     // Date helpers
-    //// TODO: Share stuff
     Date.prototype.year = function () { return this.getFullYear(); };
     Date.prototype.month = function () { return this.getMonth() + 1; };
     Date.prototype.day = function () { return this.getDate(); };
@@ -12,8 +11,79 @@
     var balanceUpdated = function () { };
     var transactionsUpdated = function () { };
 
-    // UI
+    // Bind UI to data model
     var template = $('#transaction-template').hide();
+    var balanceText = $('#balance');
+    var balanceStatus = $('#balance-status');
+
+    var formatAmount = function (number) {
+        return (number >= 0 ? '' : '-') + currencySymbol + Math.abs(number).toFixed(2);
+    };
+
+    var formatDate = function (date) {
+        return date.month() + '/' + date.day();
+    }
+
+    balanceUpdated = function (balance) {
+        balanceText.text(formatAmount(balance));
+
+        var statusClass = 'panel-success';
+        if (balance < 0) {
+            statusClass = 'panel-danger';
+        } else if (balance < 50) {
+            statusClass = 'panel-warning';
+        }
+        balanceStatus.removeClass('panel-success panel-warning panel-danger').addClass(statusClass);
+    };
+
+    transactionsUpdated = function (transactions) {
+        // Clear existing entries
+        // TODO: This could be more efficient (e.g. only add/remove changed entries)
+        template.siblings(':visible').remove();
+
+        // Add new entries
+        for (var i = 0; i < transactions.length; i++) {
+            var transaction = transactions[i];
+            var amount = transaction.amount;
+            var entry = template.clone()
+                .insertAfter(template)
+                .show()
+                .find('.transaction-description').text(transaction.description).end()
+                .find('.transaction-date').text(formatDate(transaction.date)).end()
+                .find('.transaction-amount').text(formatAmount(Math.abs(transaction.amount))).end();
+
+            if (amount < 0) {
+                entry.addClass('success');
+            }
+        }
+    };
+
+    // Update from server
+    var updateAsync = function () {
+        $.ajax({
+            type: 'GET',
+            url: budgetTrackerCore.summaryPath,
+            dataType: 'json',
+        }).done(function (serverState) {
+            var balance = serverState.balance;
+            var transactions = serverState.transactions;
+
+            // Parse dates
+            for (var i = 0, count = transactions.length; i < count; i++) {
+                var transaction = transactions[i];
+                transaction.date = new Date(transaction.date);
+            }
+
+            // Update UI
+            balanceUpdated(balance);
+            transactionsUpdated(transactions);
+        }).error(function (error) {
+            // TODO: What to do on error?
+            alert('ERROR: ' + error);
+        });
+    };
+
+    // UI interactions
     var addDescription = $('#add-description');
     var addDescriptionGroup = $('#add-description-group');
     var addAmount = $('#add-amount');
@@ -21,7 +91,6 @@
     var contributeAmount = $('#contribute-amount');
     var contributeAmountGroup = $('#contribute-amount-group');
 
-    // TODO: Probably move down below updateAsync definition
     $('#add-form').submit(function (event) {
         event.preventDefault();
 
@@ -81,77 +150,6 @@
             contributeAmountGroup.addClass('has-error');
         }
     });
-
-    var formatAmount = function (number) {
-        return (number >= 0 ? '' : '-') + currencySymbol + Math.abs(number).toFixed(2);
-    };
-
-    var formatDate = function (date) {
-        return date.month() + '/' + date.day();
-    }
-
-    // Bind UI to data model
-    var balanceText = $('#balance');
-    var balanceStatus = $('#balance-status');
-
-    balanceUpdated = function (balance) {
-        balanceText.text(formatAmount(balance));
-
-        var statusClass = 'panel-success';
-        if (balance < 0) {
-            statusClass = 'panel-danger';
-        } else if (balance < 50) {
-            statusClass = 'panel-warning';
-        }
-        balanceStatus.removeClass('panel-success panel-warning panel-danger').addClass(statusClass);
-    };
-
-    transactionsUpdated = function (transactions) {
-        // Clear existing entries
-        // TODO: This could be more efficient (e.g. only add/remove changed entries)
-        template.siblings(':visible').remove();
-
-        // Add new entries
-        for (var i = 0; i < transactions.length; i++) {
-            var transaction = transactions[i];
-            var amount = transaction.amount;
-            var entry = template.clone()
-                .insertAfter(template)
-                .show()
-                .find('.transaction-description').text(transaction.description).end()
-                .find('.transaction-date').text(formatDate(transaction.date)).end()
-                .find('.transaction-amount').text(formatAmount(Math.abs(transaction.amount))).end();
-
-            if (amount < 0) {
-                entry.addClass('success');
-            }
-        }
-    };
-
-    // Update from server
-    var updateAsync = function () {
-        $.ajax({
-            type: 'GET',
-            url: budgetTrackerCore.transactionsPath,
-            dataType: 'json',
-        }).done(function (serverState) {
-            var balance = serverState.balance;
-            var transactions = serverState.transactions;
-
-            // Parse dates
-            for (var i = 0, count = transactions.length; i < count; i++) {
-                var transaction = transactions[i];
-                transaction.date = new Date(transaction.date);
-            }
-
-            // Update UI
-            balanceUpdated(balance);
-            transactionsUpdated(transactions);
-        }).error(function (error) {
-            // TODO: What to do on error?
-            alert('ERROR: ' + error);
-        });
-    };
 
     // Initial state
     updateAsync();

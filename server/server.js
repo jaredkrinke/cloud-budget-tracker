@@ -41,6 +41,16 @@ app.use('/common', express.static(__dirname + '/../common'));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
+// Summary
+app.route(budgetTrackerCore.summaryPath).get(function (request, response) {
+    console.log('Getting transactions...');
+
+    response.send(JSON.stringify({
+        balance: balance,
+        transactions: transactions,
+    }));
+});
+
 // Contributions
 app.route(budgetTrackerCore.contributionsPath).post(function (request, response) {
     console.log('Adding contribution...');
@@ -56,19 +66,8 @@ app.route(budgetTrackerCore.contributionsPath).post(function (request, response)
 });
 
 // Transactions
-app.route(budgetTrackerCore.transactionsPath)
-// TODO: Move GET to a different resource?
-.get(function (request, response) {
-    console.log('Getting transactions...');
-
-    response.send(JSON.stringify({
-        balance: balance,
-        transactions: transactions,
-    }));
-})
-.post(function (request, response) {
+app.route(budgetTrackerCore.transactionsPath).post(function (request, response) {
     console.log('Adding transaction...');
-    // TODO: What if the body that is sent is huge?
     var body = request.body;
 
     var transaction = validateAndCreateTransaction(body.description, body.amount);

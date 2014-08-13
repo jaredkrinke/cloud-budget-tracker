@@ -3,8 +3,10 @@
     exports.transactionHistorySize = 10;
 
     // API
-    exports.transactionsPath = '/api/transactions';
-    exports.contributionsPath = '/api/contributions';
+    var prefix = '/api';
+    exports.transactionsPath = prefix + '/transactions';
+    exports.contributionsPath = prefix + '/contributions';
+    exports.summaryPath = prefix + '/summary';
 
     // Input validation
     var descriptionMinLength = 1;
