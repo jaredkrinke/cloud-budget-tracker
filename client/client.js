@@ -7,10 +7,6 @@
     Date.prototype.month = function () { return this.getMonth() + 1; };
     Date.prototype.day = function () { return this.getDate(); };
 
-    // Events
-    var balanceUpdated = function () { };
-    var transactionsUpdated = function () { };
-
     // Bind UI to data model
     var template = $('#transaction-template').hide();
     var balanceText = $('#balance');
@@ -24,7 +20,7 @@
         return date.month() + '/' + date.day();
     }
 
-    balanceUpdated = function (balance) {
+    var balanceUpdated = function (balance) {
         balanceText.text(formatAmount(balance));
 
         var statusClass = 'panel-success';
@@ -36,7 +32,7 @@
         balanceStatus.removeClass('panel-success panel-warning panel-danger').addClass(statusClass);
     };
 
-    transactionsUpdated = function (transactions) {
+    var transactionsUpdated = function (transactions) {
         // Clear existing entries
         // TODO: This could be more efficient (e.g. only add/remove changed entries)
         template.siblings(':visible').remove();
@@ -56,6 +52,10 @@
                 entry.addClass('success');
             }
         }
+    };
+
+    var showServerError = function () {
+        $('#server-error').removeClass('hidden').show();
     };
 
     // Update from server
@@ -78,8 +78,7 @@
             balanceUpdated(balance);
             transactionsUpdated(transactions);
         }).error(function (error) {
-            // TODO: What to do on error?
-            alert('ERROR: ' + error);
+            showServerError();
         });
     };
 
@@ -109,8 +108,7 @@
                     amount: amount,
                 },
             }).done(updateAsync).error(function (error) {
-                // TODO
-                alert('POST ERROR: ' + JSON.stringify(error));
+                showServerError();
             });
         } else {
             // Highlight validation errors
@@ -143,8 +141,7 @@
                     amount: amount,
                 },
             }).done(updateAsync).error(function (error) {
-                // TODO
-                alert('POST ERROR: ' + JSON.stringify(error));
+                showServerError();
             });
         } else {
             contributeAmountGroup.addClass('has-error');
