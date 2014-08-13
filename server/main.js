@@ -1,4 +1,7 @@
 ﻿var app = require('express')();
+var bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 
 // Constants
 var transactionHistorySize = 10;
@@ -62,14 +65,14 @@ app.route('/api')
     }));
 })
 .post(function (request, response) {
-    console.log('Received POST request.');
-    // TODO: Can't seem to parse the arguments...
-    console.log(request.body);
-    console.log(request.params);
+    console.log('Received POST request:');
+    var body = request.body;
+    console.log(body);
 
-    var transaction = validateAndCreateTransaction(request.params.description, request.params.amount);
+    var transaction = validateAndCreateTransaction(body.description, body.amount);
     if (transaction) {
         response.status(201);
+        addTransaction(transaction);
     } else {
         response.status(400);
     }
