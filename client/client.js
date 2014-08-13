@@ -15,7 +15,7 @@
 
     // Events
     var balanceUpdated = function () { };
-    var transactionAdded = function () { };
+    var transactionsUpdated = function () { };
 
     // Data model
     var balance;
@@ -130,17 +130,25 @@
         balanceStatus.removeClass('panel-success panel-warning panel-danger').addClass(statusClass);
     };
 
-    transactionAdded = function (transaction) {
-        var amount = transaction.amount;
-        var entry = template.clone()
-            .insertAfter(template)
-            .show()
-            .find('.transaction-description').text(transaction.description).end()
-            .find('.transaction-date').text(formatDate(transaction.date)).end()
-            .find('.transaction-amount').text(formatAmount(Math.abs(transaction.amount))).end();
+    transactionsUpdated = function (transactions) {
+        // Clear existing entries
+        // TODO: This could be more efficient (e.g. only add/remove changed entries)
+        template.siblings(':visible').remove();
 
-        if (amount < 0) {
-            entry.addClass('success');
+        // Add new entries
+        for (var i = 0; i < transactions.length; i++) {
+            var transaction = transactions[i];
+            var amount = transaction.amount;
+            var entry = template.clone()
+                .insertAfter(template)
+                .show()
+                .find('.transaction-description').text(transaction.description).end()
+                .find('.transaction-date').text(formatDate(transaction.date)).end()
+                .find('.transaction-amount').text(formatAmount(Math.abs(transaction.amount))).end();
+
+            if (amount < 0) {
+                entry.addClass('success');
+            }
         }
     };
 
@@ -162,26 +170,34 @@
     //    transactions = [];
     //}
 
-    // Initial state
-    $.ajax({
-        type: 'GET',
-        url: '/api',
-        port: '8888',
-        dataType: 'json',
-    }).done(function (serverState) {
-        balance = serverState.balance;
-        transactions = serverState.transactions;
+    // Update from server
+    var updateAsync = function () {
+        $.ajax({
+            type: 'GET',
+            url: '/api',
+            port: '8888',
+            dataType: 'json',
+        }).done(function (serverState) {
+            balance = serverState.balance;
+            transactions = serverState.transactions;
 
-        balanceUpdated(balance);
-        for (var i = 0, count = transactions.length; i < count; i++) {
-            var transaction = transactions[i];
-            transaction.date = new Date(transaction.date);
-            transactionAdded(transaction);
-        }
-    }).error(function (error) {
-        // TODO: What to do on error?
-        alert('ERROR: ' + error);
-    });
+            // Parse dates
+            for (var i = 0, count = transactions.length; i < count; i++) {
+                var transaction = transactions[i];
+                transaction.date = new Date(transaction.date);
+            }
+
+            // Update UI
+            balanceUpdated(balance);
+            transactionsUpdated(transactions);
+        }).error(function (error) {
+            // TODO: What to do on error?
+            alert('ERROR: ' + error);
+        });
+    };
+
+    // Initial state
+    updateAsync();
 
     // TODO: Deleting transactions
     // TODO: Automate monthly addition of funds?
