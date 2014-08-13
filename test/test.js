@@ -16,11 +16,14 @@ StringStream.prototype._read = function () {
 // Test requests
 var needle = require('needle');
 var requests = [
+    // Test transactions
     {
         method: 'get',
+        url: '/api/transactions',
     },
     {
         method: 'post',
+        url: '/api/transactions',
         data: {
             description: 'Testing this "thing" out!',
             amount: '5.56',
@@ -28,9 +31,11 @@ var requests = [
     },
     {
         method: 'get',
+        url: '/api/transactions',
     },
     {
         method: 'post',
+        url: '/api/transactions',
         data: {
             description: 'Should fail...',
             amount: 'a',
@@ -38,6 +43,25 @@ var requests = [
     },
     {
         method: 'post',
+        url: '/api/transactions',
+        data: new StringStream('{Also fail!!!"' + "'"),
+    },
+
+    // Test contributions
+    {
+        method: 'post',
+        url: '/api/contributions',
+        data: {
+            amount: '100',
+        },
+    },
+    {
+        method: 'get',
+        url: '/api/transactions',
+    },
+    {
+        method: 'post',
+        url: '/api/contributions',
         data: new StringStream('{Also fail!!!"' + "'"),
     },
 ];
@@ -47,7 +71,7 @@ var processRequests = function (requests) {
         var request = requests[0];
         needle.request(
             request.method,
-            'http://localhost:8888/api/transactions',
+            'http://localhost:8888' + request.url,
             request.data,
             { json: false },
             function (error, response, body) {

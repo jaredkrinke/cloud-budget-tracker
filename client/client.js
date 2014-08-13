@@ -19,8 +19,8 @@
     var addDescriptionGroup = $('#add-description-group');
     var addAmount = $('#add-amount');
     var addAmountGroup = $('#add-amount-group');
-    //var contributeAmount = $('#contribute-amount');
-    //var contributeAmountGroup = $('#contribute-amount-group');
+    var contributeAmount = $('#contribute-amount');
+    var contributeAmountGroup = $('#contribute-amount-group');
 
     // TODO: Share code
     var amountPattern = /^(\d+|\d*\.\d{0,2})$/;
@@ -55,9 +55,7 @@
                     description: description,
                     amount: amount,
                 },
-            }).done(function () {
-                updateAsync();
-            }).error(function (error) {
+            }).done(updateAsync).error(function (error) {
                 // TODO
                 alert('POST ERROR: ' + JSON.stringify(error));
             });
@@ -77,21 +75,29 @@
         }
     });
 
-    //$('#contribute-form').submit(function (event) {
-    //    event.preventDefault();
+    $('#contribute-form').submit(function (event) {
+        event.preventDefault();
 
-    //    var amount = parseAmount(contributeAmount.val());
-    //    var valid = !isNaN(amount);
-    //    if (valid) {
-    //        contributeAmountGroup.removeClass('has-error');
-    //        addTransaction({
-    //            description: 'Contribution',
-    //            amount: -amount,
-    //        })
-    //    } else {
-    //        contributeAmountGroup.addClass('has-error');
-    //    }
-    //});
+        var amount = parseAmount(contributeAmount.val());
+        var valid = !isNaN(amount);
+        if (valid) {
+            contributeAmountGroup.removeClass('has-error');
+
+            // Valid contribution; send it to the server
+            $.ajax({
+                type: 'POST',
+                url: '/api/contributions',
+                data: {
+                    amount: amount,
+                },
+            }).done(updateAsync).error(function (error) {
+                // TODO
+                alert('POST ERROR: ' + JSON.stringify(error));
+            });
+        } else {
+            contributeAmountGroup.addClass('has-error');
+        }
+    });
 
     var formatAmount = function (number) {
         return (number >= 0 ? '' : '-') + currencySymbol + Math.abs(number).toFixed(2);

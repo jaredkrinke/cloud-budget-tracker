@@ -18,6 +18,10 @@ Date.today = function () {
 var balance = 0;
 var transactions = [];
 
+var addContribution = function (amount) {
+    balance += amount;
+};
+
 var addTransaction = function (transaction) {
     if (transactions.push(transaction) > transactionHistorySize) {
         transactions.shift();
@@ -56,13 +60,33 @@ var validateAndCreateTransaction = function (description, amountString) {
     return null;
 };
 
-// Client
+// Client (static files)
 app.use('/', express.static(__dirname + '/../client'));
 
 // Server
+
+// Contributions
+app.route('/api/contributions').post(function (request, response) {
+    console.log('Adding contribution...');
+
+    var body = request.body;
+    var amount = parseAmount(body.amount);
+    var amountValid = !isNaN(amount);
+    // TODO: Exception handling
+    if (amountValid) {
+        addContribution(amount);
+        response.status(201);
+    } else {
+        response.status(400);
+    }
+    response.end();
+});
+
+// Transactions
 app.route('/api/transactions')
+// TODO: Move GET to a different resource?
 .get(function (request, response) {
-    console.log('Received GET request.');
+    console.log('Getting transactions...');
 
     response.send(JSON.stringify({
         balance: balance,
@@ -70,18 +94,17 @@ app.route('/api/transactions')
     }));
 })
 .post(function (request, response) {
-    console.log('Received POST request:');
+    console.log('Adding transaction...');
     // TODO: What if the body that is sent is huge?
     var body = request.body;
 
     var transaction = validateAndCreateTransaction(body.description, body.amount);
     if (transaction) {
-        response.status(201);
         addTransaction(transaction);
+        response.status(201);
     } else {
         response.status(400);
     }
-
     response.end();
 })
 ;
