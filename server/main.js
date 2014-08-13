@@ -36,15 +36,17 @@ var parseAmount = function (text) {
 };
 
 var validateAndCreateTransaction = function (description, amountString) {
-    var descriptionValid = (description.length >= descriptionMinLength && description.length <= descriptionMaxLength);
-    var amount = parseAmount(amountString);
-    var amountValid = !isNaN(amount);
-    if (descriptionValid && amountValid) {
-        return {
-            date: Date.today(),
-            description: description,
-            amount: amount,
-        };
+    if (description && amountString) {
+        var descriptionValid = (description && description.length >= descriptionMinLength && description.length <= descriptionMaxLength);
+        var amount = parseAmount(amountString);
+        var amountValid = !isNaN(amount);
+        if (descriptionValid && amountValid) {
+            return {
+                date: Date.today(),
+                description: description,
+                amount: amount,
+            };
+        }
     }
     return null;
 };
@@ -52,13 +54,27 @@ var validateAndCreateTransaction = function (description, amountString) {
 // Server
 app.route('/api')
 .get(function (request, response) {
+    console.log('Received GET request.');
+
     response.send(JSON.stringify({
         balance: balance,
         transactions: transactions,
     }));
 })
 .post(function (request, response) {
-    // TODO: Create and append transaction
+    console.log('Received POST request.');
+    // TODO: Can't seem to parse the arguments...
+    console.log(request.body);
+    console.log(request.params);
+
+    var transaction = validateAndCreateTransaction(request.params.description, request.params.amount);
+    if (transaction) {
+        response.status(201);
+    } else {
+        response.status(400);
+    }
+
+    response.end();
 })
 ;
 
