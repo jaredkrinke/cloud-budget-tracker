@@ -1,14 +1,9 @@
 ﻿$(function () {
     // Constants
     var currencySymbol = '$';
-    //var transactionHistorySize = 10;
 
-    //// Date helpers
+    // Date helpers
     //// TODO: Share stuff
-    //Date.today = function () {
-    //    return new Date();
-    //};
-
     Date.prototype.year = function () { return this.getFullYear(); };
     Date.prototype.month = function () { return this.getMonth() + 1; };
     Date.prototype.day = function () { return this.getDate(); };
@@ -17,79 +12,70 @@
     var balanceUpdated = function () { };
     var transactionsUpdated = function () { };
 
-    // Data model
-    var balance;
-    var transactions;
-
-    //var addTransactionInternal = function (transaction) {
-    //    transactions.push(transaction);
-    //    balance -= transaction.amount;
-    //};
-
-    //var addTransaction = function (transaction) {
-    //    transaction.date = Date.today();
-    //    addTransactionInternal(transaction);
-
-    //    // Persist changes to local storage
-    //    localStorage['balance'] = balance;
-    //    localStorage['transactions'] = JSON.stringify(transactions.slice(-transactionHistorySize));
-
-    //    balanceUpdated(balance);
-    //    transactionAdded(transaction);
-    //};
-
     // UI
     var template = $('#transaction-template').hide();
-    //var addDescription = $('#add-description');
-    //var addDescriptionGroup = $('#add-description-group');
-    //var addAmount = $('#add-amount');
-    //var addAmountGroup = $('#add-amount-group');
+    var addDescription = $('#add-description');
+    var addDescriptionGroup = $('#add-description-group');
+    var addAmount = $('#add-amount');
+    var addAmountGroup = $('#add-amount-group');
     //var contributeAmount = $('#contribute-amount');
     //var contributeAmountGroup = $('#contribute-amount-group');
 
-    //var amountPattern = /^(\d+|\d*\.\d{0,2})$/;
-    //var parseAmount = function (text) {
-    //    if (amountPattern.test(text)) {
-    //        var amount = +text;
-    //        if (!isNaN(amount) && amount > 0) {
-    //            return amount;
-    //        }
-    //    }
-    //    return NaN;
-    //};
+    // TODO: Share code
+    var amountPattern = /^(\d+|\d*\.\d{0,2})$/;
+    var parseAmount = function (text) {
+        if (amountPattern.test(text)) {
+            var amount = +text;
+            if (!isNaN(amount) && amount > 0) {
+                return amount;
+            }
+        }
+        return NaN;
+    };
 
-    //$('#add-form').submit(function (event) {
-    //    event.preventDefault();
+    // TODO: Probably move down below updateAsync definition
+    $('#add-form').submit(function (event) {
+        event.preventDefault();
 
-    //    // Validation
-    //    var description = addDescription.val();
-    //    var descriptionValid = (description.length > 0);
-    //    // TODO: Ignore currency symbols in the input
-    //    var amount = parseAmount(addAmount.val());
-    //    var amountValid = !isNaN(amount);
-    //    var valid = descriptionValid && amountValid;
+        // Validation
+        var description = addDescription.val();
+        var descriptionValid = (description.length > 0);
+        // TODO: Ignore currency symbols in the input
+        var amount = parseAmount(addAmount.val());
+        var amountValid = !isNaN(amount);
+        var valid = descriptionValid && amountValid;
 
-    //    if (valid) {
-    //        // Valid transaction; add it
-    //        addTransaction({
-    //            description: description,
-    //            amount: amount,
-    //        });
-    //    } else {
-    //        // Highlight validation errors
-    //        if (descriptionValid) {
-    //            addDescriptionGroup.removeClass('has-error');
-    //        } else {
-    //            addDescriptionGroup.addClass('has-error');
-    //        }
+        if (valid) {
+            // Valid transaction; send it to the server
+            $.ajax({
+                type: 'POST',
+                url: '/api',
+                port: '8888',
+                data: {
+                    description: description,
+                    amount: amount,
+                },
+            }).done(function () {
+                updateAsync();
+            }).error(function (error) {
+                // TODO
+                alert('POST ERROR: ' + JSON.stringify(error));
+            });
+        } else {
+            // Highlight validation errors
+            if (descriptionValid) {
+                addDescriptionGroup.removeClass('has-error');
+            } else {
+                addDescriptionGroup.addClass('has-error');
+            }
 
-    //        if (amountValid) {
-    //            addAmountGroup.removeClass('has-error');
-    //        } else {
-    //            addAmountGroup.addClass('has-error');
-    //        }
-    //    }
-    //});
+            if (amountValid) {
+                addAmountGroup.removeClass('has-error');
+            } else {
+                addAmountGroup.addClass('has-error');
+            }
+        }
+    });
 
     //$('#contribute-form').submit(function (event) {
     //    event.preventDefault();
@@ -118,6 +104,7 @@
     // Bind UI to data model
     var balanceText = $('#balance');
     var balanceStatus = $('#balance-status');
+
     balanceUpdated = function (balance) {
         balanceText.text(formatAmount(balance));
 
@@ -152,24 +139,6 @@
         }
     };
 
-    //// Load data from local storage
-    //var balance = +localStorage['balance'] || 0;
-    //var transactionsJSON = localStorage['transactions'];
-    //var transactions;
-    //if (transactionsJSON) {
-    //    var transactions = JSON.parse(transactionsJSON);
-    //    for (var i = 0, count = transactions.length; i < count; i++) {
-    //        var transaction = transactions[i];
-    //        if (transaction.date) {
-    //            transaction.date = new Date(transaction.date);
-    //        } else {
-    //            transaction.date = Date.today();
-    //        }
-    //    }
-    //} else {
-    //    transactions = [];
-    //}
-
     // Update from server
     var updateAsync = function () {
         $.ajax({
@@ -178,8 +147,8 @@
             port: '8888',
             dataType: 'json',
         }).done(function (serverState) {
-            balance = serverState.balance;
-            transactions = serverState.transactions;
+            var balance = serverState.balance;
+            var transactions = serverState.transactions;
 
             // Parse dates
             for (var i = 0, count = transactions.length; i < count; i++) {
