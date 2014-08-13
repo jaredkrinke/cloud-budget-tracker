@@ -1,17 +1,6 @@
 ﻿var express = require('express');
 var bodyParser = require('body-parser');
-
-var app = express();
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-
-// Constants
-var transactionHistorySize = 10;
-
-// Date helpers
-Date.today = function () {
-    return new Date();
-};
+var budgetTrackerCore = require('../common/budget-tracker-core.js');
 
 // Data model
 // TODO: Save to/load from persistent storage
@@ -23,57 +12,41 @@ var addContribution = function (amount) {
 };
 
 var addTransaction = function (transaction) {
-    if (transactions.push(transaction) > transactionHistorySize) {
+    if (transactions.push(transaction) > budgetTrackerCore.transactionHistorySize) {
         transactions.shift();
     }
 
     balance -= transaction.amount;
 };
 
-// Input validation
-var descriptionMinLength = 1;
-var descriptionMaxLength = 100;
-var amountPattern = /^(\d+|\d*\.\d{0,2})$/;
-var parseAmount = function (text) {
-    if (amountPattern.test(text)) {
-        var amount = +text;
-        if (!isNaN(amount) && amount > 0) {
-            return amount;
-        }
-    }
-    return NaN;
-};
-
-var validateAndCreateTransaction = function (description, amountString) {
-    if (description && amountString) {
-        var descriptionValid = (description && description.length >= descriptionMinLength && description.length <= descriptionMaxLength);
-        var amount = parseAmount(amountString);
-        var amountValid = !isNaN(amount);
-        if (descriptionValid && amountValid) {
-            return {
-                date: Date.today(),
-                description: description,
-                amount: amount,
-            };
-        }
+var validateAndCreateTransaction = function (description, amount) {
+    description = budgetTrackerCore.validateDescription(description);
+    amount = budgetTrackerCore.validateAmount(amount);
+    if (description !== null && amount !== null) {
+        return {
+            date: new Date(),
+            description: description,
+            amount: amount,
+        };
     }
     return null;
 };
 
 // Client (static files)
+var app = express();
 app.use('/', express.static(__dirname + '/../client'));
+app.use('/common', express.static(__dirname + '/../common'));
 
 // Server
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 
 // Contributions
-app.route('/api/contributions').post(function (request, response) {
+app.route(budgetTrackerCore.contributionsPath).post(function (request, response) {
     console.log('Adding contribution...');
 
-    var body = request.body;
-    var amount = parseAmount(body.amount);
-    var amountValid = !isNaN(amount);
-    // TODO: Exception handling
-    if (amountValid) {
+    var amount = budgetTrackerCore.validateAmount(request.body.amount);
+    if (amount !== null) {
         addContribution(amount);
         response.status(201);
     } else {
@@ -83,7 +56,7 @@ app.route('/api/contributions').post(function (request, response) {
 });
 
 // Transactions
-app.route('/api/transactions')
+app.route(budgetTrackerCore.transactionsPath)
 // TODO: Move GET to a different resource?
 .get(function (request, response) {
     console.log('Getting transactions...');

@@ -1,7 +1,6 @@
 ﻿$(function () {
     // Constants
     var currencySymbol = '$';
-    var transactionsUrl = '/api/transactions';
 
     // Date helpers
     //// TODO: Share stuff
@@ -22,35 +21,20 @@
     var contributeAmount = $('#contribute-amount');
     var contributeAmountGroup = $('#contribute-amount-group');
 
-    // TODO: Share code
-    var amountPattern = /^(\d+|\d*\.\d{0,2})$/;
-    var parseAmount = function (text) {
-        if (amountPattern.test(text)) {
-            var amount = +text;
-            if (!isNaN(amount) && amount > 0) {
-                return amount;
-            }
-        }
-        return NaN;
-    };
-
     // TODO: Probably move down below updateAsync definition
     $('#add-form').submit(function (event) {
         event.preventDefault();
 
         // Validation
-        var description = addDescription.val();
-        var descriptionValid = (description.length > 0);
+        var description = budgetTrackerCore.validateDescription(addDescription.val());
         // TODO: Ignore currency symbols in the input
-        var amount = parseAmount(addAmount.val());
-        var amountValid = !isNaN(amount);
-        var valid = descriptionValid && amountValid;
+        var amount = budgetTrackerCore.validateAmount(addAmount.val());
 
-        if (valid) {
+        if (description !== null && amount !== null) {
             // Valid transaction; send it to the server
             $.ajax({
                 type: 'POST',
-                url: transactionsUrl,
+                url: budgetTrackerCore.transactionsPath,
                 data: {
                     description: description,
                     amount: amount,
@@ -61,13 +45,13 @@
             });
         } else {
             // Highlight validation errors
-            if (descriptionValid) {
+            if (description === null) {
                 addDescriptionGroup.removeClass('has-error');
             } else {
                 addDescriptionGroup.addClass('has-error');
             }
 
-            if (amountValid) {
+            if (amount === null) {
                 addAmountGroup.removeClass('has-error');
             } else {
                 addAmountGroup.addClass('has-error');
@@ -78,15 +62,14 @@
     $('#contribute-form').submit(function (event) {
         event.preventDefault();
 
-        var amount = parseAmount(contributeAmount.val());
-        var valid = !isNaN(amount);
-        if (valid) {
+        var amount = budgetTrackerCore.validateAmount(contributeAmount.val());
+        if (amount !== null) {
             contributeAmountGroup.removeClass('has-error');
 
             // Valid contribution; send it to the server
             $.ajax({
                 type: 'POST',
-                url: '/api/contributions',
+                url: budgetTrackerCore.contributionsPath,
                 data: {
                     amount: amount,
                 },
@@ -149,7 +132,7 @@
     var updateAsync = function () {
         $.ajax({
             type: 'GET',
-            url: transactionsUrl,
+            url: budgetTrackerCore.transactionsPath,
             dataType: 'json',
         }).done(function (serverState) {
             var balance = serverState.balance;

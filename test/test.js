@@ -1,6 +1,7 @@
 ﻿// Stream from a string
 var Readable = require('stream').Readable;
 var util = require('util');
+var budgetTrackerCore = require('../common/budget-tracker-core.js');
 util.inherits(StringStream, Readable);
 
 function StringStream(content) {
@@ -19,11 +20,11 @@ var requests = [
     // Test transactions
     {
         method: 'get',
-        url: '/api/transactions',
+        url: budgetTrackerCore.transactionsPath,
     },
     {
         method: 'post',
-        url: '/api/transactions',
+        url: budgetTrackerCore.transactionsPath,
         data: {
             description: 'Testing this "thing" out!',
             amount: '5.56',
@@ -31,11 +32,11 @@ var requests = [
     },
     {
         method: 'get',
-        url: '/api/transactions',
+        url: budgetTrackerCore.transactionsPath,
     },
     {
         method: 'post',
-        url: '/api/transactions',
+        url: budgetTrackerCore.transactionsPath,
         data: {
             description: 'Should fail...',
             amount: 'a',
@@ -43,25 +44,25 @@ var requests = [
     },
     {
         method: 'post',
-        url: '/api/transactions',
+        url: budgetTrackerCore.transactionsPath,
         data: new StringStream('{Also fail!!!"' + "'"),
     },
 
     // Test contributions
     {
         method: 'post',
-        url: '/api/contributions',
+        url: budgetTrackerCore.contributionsPath,
         data: {
             amount: '100',
         },
     },
     {
         method: 'get',
-        url: '/api/transactions',
+        url: budgetTrackerCore.transactionsPath,
     },
     {
         method: 'post',
-        url: '/api/contributions',
+        url: budgetTrackerCore.contributionsPath,
         data: new StringStream('{Also fail!!!"' + "'"),
     },
 ];
