@@ -1,20 +1,66 @@
 ﻿var app = require('express')();
 
+// Constants
+var transactionHistorySize = 10;
+
+// Date helpers
+Date.today = function () {
+    return new Date();
+};
+
 // Data model
+// TODO: Save to/load from persistent storage
 var balance = 0;
 var transactions = [];
 
 var addTransaction = function (transaction) {
-    transactions.push(transaction);
+    if (transactions.push(transaction) > transactionHistorySize) {
+        transactions.shift();
+    }
+
     balance -= transaction.amount;
 };
 
-app.get('/', function (request, response) {
+// Input validation
+var descriptionMinLength = 1;
+var descriptionMaxLength = 100;
+var amountPattern = /^(\d+|\d*\.\d{0,2})$/;
+var parseAmount = function (text) {
+    if (amountPattern.test(text)) {
+        var amount = +text;
+        if (!isNaN(amount) && amount > 0) {
+            return amount;
+        }
+    }
+    return NaN;
+};
+
+var validateAndCreateTransaction = function (description, amountString) {
+    var descriptionValid = (description.length >= descriptionMinLength && description.length <= descriptionMaxLength);
+    var amount = parseAmount(amountString);
+    var amountValid = !isNaN(amount);
+    if (descriptionValid && amountValid) {
+        return {
+            date: Date.today(),
+            description: description,
+            amount: amount,
+        };
+    }
+    return null;
+};
+
+// Server
+app.route('/api')
+.get(function (request, response) {
     response.send(JSON.stringify({
         balance: balance,
         transactions: transactions,
     }));
-});
+})
+.post(function (request, response) {
+    // TODO: Create and append transaction
+})
+;
 
 var server = app.listen(8888, function () {
     console.log('Listening on port %d...', server.address().port);
