@@ -47,7 +47,7 @@ var processRequests = function (requests) {
         var request = requests[0];
         needle.request(
             request.method,
-            'http://localhost:8888/api',
+            'http://localhost:8888/api/transactions',
             request.data,
             { json: false },
             function (error, response, body) {

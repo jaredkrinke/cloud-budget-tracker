@@ -60,7 +60,7 @@ var validateAndCreateTransaction = function (description, amountString) {
 app.use('/', express.static(__dirname + '/../client'));
 
 // Server
-app.route('/api')
+app.route('/api/transactions')
 .get(function (request, response) {
     console.log('Received GET request.');
 

@@ -1,6 +1,7 @@
 ﻿$(function () {
     // Constants
     var currencySymbol = '$';
+    var transactionsUrl = '/api/transactions';
 
     // Date helpers
     //// TODO: Share stuff
@@ -49,8 +50,7 @@
             // Valid transaction; send it to the server
             $.ajax({
                 type: 'POST',
-                url: '/api',
-                port: '8888',
+                url: transactionsUrl,
                 data: {
                     description: description,
                     amount: amount,
@@ -143,8 +143,7 @@
     var updateAsync = function () {
         $.ajax({
             type: 'GET',
-            url: '/api',
-            port: '8888',
+            url: transactionsUrl,
             dataType: 'json',
         }).done(function (serverState) {
             var balance = serverState.balance;
