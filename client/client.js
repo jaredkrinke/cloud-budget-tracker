@@ -63,6 +63,7 @@
         $.ajax({
             type: 'GET',
             url: budgetTrackerCore.summaryPath,
+            cache: false,
             dataType: 'json',
         }).done(function (serverState) {
             var balance = serverState.balance;
@@ -107,8 +108,8 @@
                     description: description,
                     amount: -amount,
                 },
-            }).done(updateAsync).error(function (error) {
-                showServerError();
+                success: updateAsync,
+                error: showServerError,
             });
         } else {
             // Highlight validation errors
@@ -141,8 +142,8 @@
                     description: 'Contribution',
                     amount: amount,
                 },
-            }).done(updateAsync).error(function (error) {
-                showServerError();
+                success: updateAsync,
+                error: showServerError,
             });
         } else {
             contributeAmountGroup.addClass('has-error');
