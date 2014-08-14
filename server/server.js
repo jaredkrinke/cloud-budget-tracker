@@ -1,18 +1,32 @@
 ﻿var express = require('express');
 var bodyParser = require('body-parser');
+var Datastore = require('nedb');
 var budgetTrackerCore = require('../common/budget-tracker-core.js');
 
 // Data model
 // TODO: Save to/load from persistent storage
+var db = new Datastore();
+var key = 'cbt';
 var balance = 0;
 var transactions = [];
 
-var addTransaction = function (transaction) {
+var addTransactionAsync = function (transaction, callback) {
     if (transactions.push(transaction) > budgetTrackerCore.transactionHistorySize) {
         transactions.shift();
     }
 
     balance += transaction.amount;
+
+    // Update the database
+    db.update(
+        { _id: key },
+        {
+            balance: balance,
+            transactions: transactions,
+        },
+        { upsert: true },
+        callback
+    );
 };
 
 var validateAndCreateTransaction = function (description, amount) {
@@ -40,11 +54,25 @@ app.use(bodyParser.json());
 // Summary
 app.route(budgetTrackerCore.summaryPath).get(function (request, response) {
     console.log('Getting transactions...');
+    db.findOne({ _id: key }, function (error, document) {
+        if (error) {
+            response.status(400);
+            response.end();
+        } else {
+            if (document) {
+                // Remove the internal-only id
+                delete document._id;
+            } else {
+                // No document was found, so return an empty summary
+                document = {
+                    balance: 0,
+                    transactions: [],
+                };
+            }
 
-    response.send(JSON.stringify({
-        balance: balance,
-        transactions: transactions,
-    }));
+            response.send(JSON.stringify(document));
+        }
+    });
 });
 
 // Transactions
@@ -54,12 +82,19 @@ app.route(budgetTrackerCore.transactionsPath).post(function (request, response) 
 
     var transaction = validateAndCreateTransaction(body.description, body.amount);
     if (transaction) {
-        addTransaction(transaction);
-        response.status(201);
+        addTransactionAsync(transaction, function (error) {
+            if (error) {
+                response.status(400);
+            } else {
+                response.status(201);
+                console.log('Transaction added.');
+            }
+            response.end();
+        });
     } else {
         response.status(400);
+        response.end();
     }
-    response.end();
 })
 ;
 
