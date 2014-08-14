@@ -48,7 +48,7 @@
                 .find('.transaction-date').text(formatDate(transaction.date)).end()
                 .find('.transaction-amount').text(formatAmount(Math.abs(transaction.amount))).end();
 
-            if (amount < 0) {
+            if (amount > 0) {
                 entry.addClass('success');
             }
         }
@@ -105,7 +105,7 @@
                 url: budgetTrackerCore.transactionsPath,
                 data: {
                     description: description,
-                    amount: amount,
+                    amount: -amount,
                 },
             }).done(updateAsync).error(function (error) {
                 showServerError();
@@ -136,8 +136,9 @@
             // Valid contribution; send it to the server
             $.ajax({
                 type: 'POST',
-                url: budgetTrackerCore.contributionsPath,
+                url: budgetTrackerCore.transactionsPath,
                 data: {
+                    description: 'Contribution',
                     amount: amount,
                 },
             }).done(updateAsync).error(function (error) {

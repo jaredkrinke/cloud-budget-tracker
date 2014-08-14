@@ -7,16 +7,12 @@ var budgetTrackerCore = require('../common/budget-tracker-core.js');
 var balance = 0;
 var transactions = [];
 
-var addContribution = function (amount) {
-    balance += amount;
-};
-
 var addTransaction = function (transaction) {
     if (transactions.push(transaction) > budgetTrackerCore.transactionHistorySize) {
         transactions.shift();
     }
 
-    balance -= transaction.amount;
+    balance += transaction.amount;
 };
 
 var validateAndCreateTransaction = function (description, amount) {
@@ -49,20 +45,6 @@ app.route(budgetTrackerCore.summaryPath).get(function (request, response) {
         balance: balance,
         transactions: transactions,
     }));
-});
-
-// Contributions
-app.route(budgetTrackerCore.contributionsPath).post(function (request, response) {
-    console.log('Adding contribution...');
-
-    var amount = budgetTrackerCore.validateAmount(request.body.amount);
-    if (amount !== null) {
-        addContribution(amount);
-        response.status(201);
-    } else {
-        response.status(400);
-    }
-    response.end();
 });
 
 // Transactions

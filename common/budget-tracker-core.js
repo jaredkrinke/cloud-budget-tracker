@@ -5,17 +5,16 @@
     // API
     var prefix = '/api';
     exports.transactionsPath = prefix + '/transactions';
-    exports.contributionsPath = prefix + '/contributions';
     exports.summaryPath = prefix + '/summary';
 
     // Input validation
     var descriptionMinLength = 1;
     var descriptionMaxLength = 100;
-    var amountPattern = /^(\d+|\d*\.\d{0,2})$/;
+    var amountPattern = /^-?(\d+|\d*\.\d{0,2})$/;
     exports.validateAmount = function (text) {
         if (amountPattern.test(text)) {
             var amount = +text;
-            if (!isNaN(amount) && amount > 0) {
+            if (!isNaN(amount) && amount != 0) {
                 return amount;
             }
         }
