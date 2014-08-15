@@ -14,7 +14,7 @@ if (argv.length === 4) {
         var hashedPassword = bcrypt.hashSync(password, salt);
 
         // Load from the database
-        var db = new Datastore({ filename: __dirname + 'users.db', });
+        var db = new Datastore({ filename: __dirname + '/users.db', });
         db.loadDatabase(function (err) {
             if (err) {
                 console.log('Error loading database!');
