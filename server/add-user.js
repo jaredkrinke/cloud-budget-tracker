@@ -1,28 +1,31 @@
 ﻿var bcrypt = require('bcryptjs');
 var Datastore = require('nedb');
-var userPattern = /^[a-z][a-z0-9]*$/i;
+var budgetTrackerCore = require('../common/budget-tracker-core.js');
+var namePattern = /^[a-z][a-z0-9]*$/i;
 
 var argv = process.argv;
 if (argv.length === 4) {
-    var user = argv[2];
+    var name = argv[2];
     var password = argv[3];
 
+    // TODO: Check to see if the user already exists
+
     // Validate user name
-    if (userPattern.test(user)) {
+    if (namePattern.test(name)) {
         // Hash the password
         var hashedPassword = bcrypt.hashSync(password);
 
         // Load from the database
-        var db = new Datastore({ filename: __dirname + '/users.db', });
+        var db = new Datastore({ filename: __dirname + budgetTrackerCore.userDatabaseName, });
         db.loadDatabase(function (err) {
             if (err) {
                 console.log('Error loading database!');
                 console.log(err);
             } else {
-                console.log('Inserting user: %s...', user);
+                console.log('Inserting user: %s...', name);
                 var document = {
-                    user: user.toLowerCase(),
-                    userDisplay: user,
+                    _id: name.toLowerCase(),
+                    nameDisplay: name,
                     password: hashedPassword,
                 };
 
@@ -32,8 +35,8 @@ if (argv.length === 4) {
             }
         });
     } else {
-        console.log('Invalid user name: %s', user);
+        console.log('Invalid user name: %s', name);
     }
 } else {
-    console.log('USAGE: <User> <Password>');
+    console.log('USAGE: <User Name> <Password>');
 }

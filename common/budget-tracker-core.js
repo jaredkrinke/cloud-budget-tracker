@@ -8,6 +8,9 @@
     exports.transactionsPath = prefix + '/transactions';
     exports.summaryPath = prefix + '/summary';
 
+    // Internal
+    exports.userDatabaseName = '/users.db';
+
     // Input validation
     var descriptionMinLength = 1;
     var descriptionMaxLength = 100;
