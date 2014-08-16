@@ -4,6 +4,7 @@
 
     // API
     var prefix = '/api';
+    exports.prefix = prefix;
     exports.transactionsPath = prefix + '/transactions';
     exports.summaryPath = prefix + '/summary';
 

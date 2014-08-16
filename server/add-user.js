@@ -10,8 +10,7 @@ if (argv.length === 4) {
     // Validate user name
     if (userPattern.test(user)) {
         // Hash the password
-        var salt = bcrypt.genSaltSync();
-        var hashedPassword = bcrypt.hashSync(password, salt);
+        var hashedPassword = bcrypt.hashSync(password);
 
         // Load from the database
         var db = new Datastore({ filename: __dirname + '/users.db', });
@@ -25,7 +24,6 @@ if (argv.length === 4) {
                     user: user.toLowerCase(),
                     userDisplay: user,
                     password: hashedPassword,
-                    salt: salt,
                 };
 
                 db.insert(document, function (err, document) {

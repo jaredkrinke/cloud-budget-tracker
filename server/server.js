@@ -1,17 +1,50 @@
 ﻿var express = require('express');
 var bodyParser = require('body-parser');
 var Datastore = require('nedb');
+var passport = require('passport');
+var bcrypt = require('bcryptjs');
+var BasicStrategy = require('passport-http').BasicStrategy;
 var budgetTrackerCore = require('../common/budget-tracker-core.js');
 
 // Load from the database
+var key = 'cbt';
 var db = new Datastore({
     filename: __dirname + '/cbt.db',
     autoload: true,
 });
 
-var key = 'cbt';
+var users = new Datastore({
+    filename: __dirname + '/users.db',
+    autoload: true,
+});
 
 db.findOne({ _id: key }, function (error, document) {
+    var app = express();
+
+    // Setup HTTP basic authentication
+    app.use(passport.initialize());
+    passport.use(new BasicStrategy(function (userName, password, done) {
+        users.findOne({ user: userName.toLowerCase() }, function (error, user) {
+            if (error) {
+                done(error);
+            }
+            else if (!user) {
+                done(null, false);
+            } else {
+                bcrypt.compare(password, user.password, function (error, result) {
+                    if (error) {
+                        done(error);
+                    } else {
+                        done(null, result ? user : false);
+                    }
+                });
+            }
+        });
+    }));
+
+    // Only require authentication on the API
+    app.use(budgetTrackerCore.prefix, passport.authenticate('basic', { session: false }));
+
     // TODO: Maybe don't keep these around?
     var balance;
     var transactions;
@@ -59,7 +92,6 @@ db.findOne({ _id: key }, function (error, document) {
     };
 
     // Client (static files)
-    var app = express();
     app.use('/', express.static(__dirname + '/../client'));
     app.use('/common', express.static(__dirname + '/../common'));
 
