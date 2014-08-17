@@ -81,14 +81,6 @@ var loadUserData = function (user, callback) {
     });
 };
 
-var addTransaction = function (data, transaction) {
-    if (data.transactions.push(transaction) > budgetTrackerCore.transactionHistorySize) {
-        data.transactions.shift();
-    }
-
-    data.balance += transaction.amount;
-};
-
 var saveTransactions = function (data, callback) {
     db.update({ _id: data._id }, data, { upsert: true }, callback);
 };
@@ -138,7 +130,7 @@ app.route(budgetTrackerCore.transactionsPath).post(function (request, response) 
             } else {
                 // Add all the transactions
                 for (var i = 0; i < count; i++) {
-                    addTransaction(data, transactions[i]);
+                    budgetTrackerCore.addTransaction(data, transactions[i]);
                 }
 
                 // Save the updated record

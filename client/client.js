@@ -1,6 +1,10 @@
 ﻿$(function () {
     // Constants
     var currencySymbol = '$';
+    // TODO: Store these in a single "lastServerData" object?
+    var lastServerBalanceKey = 'lastServerBalance';
+    var lastServerTransactionsKey = 'lastServerTransactions';
+    var unsyncedTransactionsKey = 'unsyncedTransactions';
 
     // Date helpers
     Date.prototype.year = function () { return this.getFullYear(); };
@@ -54,12 +58,103 @@
         }
     };
 
-    var showServerError = function () {
-        $('#server-error').removeClass('hidden').show();
+    // Server communication
+    // TODO: Automatically go online/offline (and sync as needed)
+    // TODO: Animation
+    var setOnline = function () { $('#server-offline').addClass('hidden'); }
+    var setOffline = function () { $('#server-offline').removeClass('hidden'); }
+
+    // Store/retrieve data from local storage
+    var retrieveUnsyncedTransactions = function () {
+        var text = localStorage[unsyncedTransactionsKey];
+        if (text) {
+            try {
+                return JSON.parse(text);
+            } catch (e) { }
+        }
+        return [];
+    };
+    var storeUnsyncedTransactions = function (unsyncedTransactions) {
+        localStorage[unsyncedTransactionsKey] = JSON.stringify(unsyncedTransactions);
     };
 
-    // Update from server
-    var updateAsync = function () {
+    var retrieveLastServerBalance = function () {
+        return +localStorage[lastServerBalanceKey] || 0;
+    };
+    var storeLastServerBalance = function (balance) {
+        localStorage[lastServerBalanceKey] = balance;
+    };
+
+    var retrieveTransactions = function () {
+        var transactionsJSON = localStorage[lastServerTransactionsKey];
+        var transactions;
+        if (transactionsJSON) {
+            try {
+                var transactions = JSON.parse(transactionsJSON);
+                for (var i = 0, count = transactions.length; i < count; i++) {
+                    var transaction = transactions[i];
+                    if (transaction.date) {
+                        transaction.date = new Date(transaction.date);
+                    }
+                }
+
+                return transactions;
+            } catch (e) { }
+        }
+        return [];
+    };
+    var storeLastServerTransactions = function (transactions) {
+        localStorage[lastServerTransactionsKey] = JSON.stringify(transactions);
+    };
+
+    var retrieveAndMergeData = function () {
+        // Get the server data
+        var serverBalance = retrieveLastServerBalance();
+        var serverTransactions = retrieveTransactions();
+
+        // Get the client data
+        var unsyncedTransactions = retrieveUnsyncedTransactions();
+
+        // Merge them
+        var data = {
+            balance: serverBalance,
+            transactions: serverTransactions,
+        };
+        var count = unsyncedTransactions.length;
+        for (var i = 0; i < count; i++) {
+            var unsyncedTransaction = unsyncedTransactions[i];
+            // Assume unsynced transactions are new
+            // TODO: Use a date other than the current date
+            unsyncedTransaction.date = new Date();
+            budgetTrackerCore.addTransaction(data, unsyncedTransaction);
+        }
+
+        return data;
+    }
+
+    var updateUI = function () {
+        var data = retrieveAndMergeData();
+        // TODO: Optimizations (e.g. checking for changes)
+        balanceUpdated(data.balance);
+        transactionsUpdated(data.transactions);
+    };
+
+    var addNewTransaction = function (description, amount) {
+        // Store locally first
+        var unsyncedTransactions = retrieveUnsyncedTransactions();;
+        unsyncedTransactions.push({
+            description: description,
+            amount: amount
+        });
+        storeUnsyncedTransactions(unsyncedTransactions);
+
+        // TODO: Could update the UI here...
+
+        // Now attempt to sync with the server
+        syncData();
+    };
+
+    var loadAndDisplayServerData = function () {
         $.ajax({
             type: 'GET',
             url: budgetTrackerCore.summaryPath,
@@ -75,12 +170,48 @@
                 transaction.date = new Date(transaction.date);
             }
 
+            // Store new state from the server
+            storeLastServerBalance(balance);
+            storeLastServerTransactions(transactions);
+
             // Update UI
-            balanceUpdated(balance);
-            transactionsUpdated(transactions);
-        }).error(function (error) {
-            showServerError();
+            setOnline();
+            updateUI();
+        }).error(function () {
+            setOffline();
+
+            // There was a server error, so show what we have locally
+            // TODO: Maybe update earlier on than this?
+            updateUI();
         });
+    };
+
+    var syncData = function () {
+        var unsyncedTransactions = retrieveUnsyncedTransactions();
+        if (unsyncedTransactions.length > 0) {
+            // TODO: Update view even in case of failure!
+            $.ajax({
+                type: 'POST',
+                url: budgetTrackerCore.transactionsPath,
+                contentType: "application/json",
+                data: JSON.stringify(unsyncedTransactions),
+                success: function () {
+                    // Transactions have been synced, so delete them
+                    storeUnsyncedTransactions([]);
+                    loadAndDisplayServerData();
+                    setOnline();
+                },
+                error: function () {
+                    setOffline();
+
+                    // There was a server error, so just update the UI locally
+                    updateUI();
+                },
+            });
+        } else {
+            // Check for an update on the server side
+            loadAndDisplayServerData();
+        }
     };
 
     // UI interactions
@@ -100,22 +231,10 @@
         var amount = budgetTrackerCore.validateAmount(addAmount.val());
 
         if (description !== null && amount !== null) {
-            // Valid transaction; send it to the server
-            $.ajax({
-                type: 'POST',
-                url: budgetTrackerCore.transactionsPath,
-                contentType: "application/json",
-                data: JSON.stringify([{
-                    description: description,
-                    amount: -amount,
-                }]),
-                success: function () {
-                    updateAsync();
-                    addDescription.val('');
-                    addAmount.val('');
-                },
-                error: showServerError,
-            });
+            // Valid transaction; save it
+            addNewTransaction(description, -amount);
+            addDescription.val('');
+            addAmount.val('');
         } else {
             // Highlight validation errors
             if (description === null) {
@@ -139,28 +258,19 @@
         if (amount !== null) {
             contributeAmountGroup.removeClass('has-error');
 
-            // Valid contribution; send it to the server
-            $.ajax({
-                type: 'POST',
-                url: budgetTrackerCore.transactionsPath,
-                contentType: "application/json",
-                data: JSON.stringify([{
-                    description: 'Contribution',
-                    amount: amount,
-                }]),
-                success: function () {
-                    updateAsync();
-                    contributeAmount.val('');
-                },
-                error: showServerError,
-            });
+            // Valid contribution; save it
+            addNewTransaction('Contribution', amount);
+            contributeAmount.val('');
         } else {
             contributeAmountGroup.addClass('has-error');
         }
     });
 
-    // Initial state
-    updateAsync();
+    // Load and display the most recently synced data
+    updateUI();
+
+    // Kick off a sync
+    syncData();
 
     // TODO: Deleting transactions
     // TODO: Automate monthly addition of funds?

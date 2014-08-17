@@ -1,7 +1,4 @@
 ﻿(function (exports) {
-    // Constants
-    exports.transactionHistorySize = 10;
-
     // API
     var prefix = '/api';
     exports.prefix = prefix;
@@ -31,4 +28,15 @@
         }
         return null;
     };
+
+    // Transactions
+    var transactionHistorySize = 10;
+    exports.addTransaction = function (data, transaction) {
+        if (data.transactions.push(transaction) > transactionHistorySize) {
+            data.transactions.shift();
+        }
+
+        data.balance += transaction.amount;
+    };
+
 })(typeof (exports) === 'undefined' ? (budgetTrackerCore = {}) : exports);
