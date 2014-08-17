@@ -74,7 +74,12 @@
     var setOffline = function () { setOnlineStatus(false); }
 
     // Online/offline triggers
-    var detectOnlineStatus = function () { setOnlineStatus(navigator ? navigator.onLine : true); };
+    var detectOnlineStatus = function () {
+        if (navigator && navigator.onLine !== undefined) {
+            return navigator.onLine;
+        }
+        return true;
+    };
     window.addEventListener('online', detectOnlineStatus, false);
     window.addEventListener('offline', detectOnlineStatus, false);
 
@@ -98,7 +103,7 @@
     var createEmptyData = function () {
         return {
             balance: 0,
-            transactions: [],
+            transactions: []
         };
     };
 
@@ -134,7 +139,7 @@
         // Merge them
         var data = {
             balance: serverData.balance,
-            transactions: serverData.transactions,
+            transactions: serverData.transactions
         };
         var count = unsyncedTransactions.length;
         for (var i = 0; i < count; i++) {
@@ -210,7 +215,7 @@
             type: 'GET',
             url: budgetTrackerCore.summaryPath,
             cache: false,
-            dataType: 'json',
+            dataType: 'json'
         }).done(function (serverData) {
             var balance = serverData.balance;
             var transactions = serverData.transactions;
@@ -245,7 +250,7 @@
                     loadAndDisplayServerData();
                     setOnline();
                 },
-                error:setOffline,
+                error:setOffline
             });
         } else {
             // Check for an update on the server side
