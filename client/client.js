@@ -148,7 +148,8 @@
         });
         storeUnsyncedTransactions(unsyncedTransactions);
 
-        // TODO: Could update the UI here...
+        // Update the UI based on local data (although it may update again later if we sync in a remote change)
+        updateUI();
 
         // Now attempt to sync with the server
         syncData();
@@ -177,13 +178,7 @@
             // Update UI
             setOnline();
             updateUI();
-        }).error(function () {
-            setOffline();
-
-            // There was a server error, so show what we have locally
-            // TODO: Maybe update earlier on than this?
-            updateUI();
-        });
+        }).error(setOffline);
     };
 
     var syncData = function () {
@@ -201,12 +196,7 @@
                     loadAndDisplayServerData();
                     setOnline();
                 },
-                error: function () {
-                    setOffline();
-
-                    // There was a server error, so just update the UI locally
-                    updateUI();
-                },
+                error:setOffline,
             });
         } else {
             // Check for an update on the server side
