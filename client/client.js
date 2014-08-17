@@ -56,8 +56,7 @@
         }
     };
 
-    // Server communication
-    // TODO: Automatically go online/offline (and sync as needed)
+    // Online/offline visual state
     var serverOffline = $('#server-offline').hide();
     var online = true;
     var setOnlineStatus = function (newOnline) {
@@ -73,6 +72,14 @@
     };
     var setOnline = function () { setOnlineStatus(true); }
     var setOffline = function () { setOnlineStatus(false); }
+
+    // Online/offline triggers
+    var detectOnlineStatus = function () { setOnlineStatus(navigator ? navigator.onLine : true); };
+    window.addEventListener('online', detectOnlineStatus, false);
+    window.addEventListener('offline', detectOnlineStatus, false);
+
+    // Check online status
+    detectOnlineStatus();
 
     // Store/retrieve data from local storage
     var retrieveUnsyncedTransactions = function () {
