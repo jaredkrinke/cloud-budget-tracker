@@ -95,6 +95,13 @@
         localStorage[unsyncedTransactionsKey] = JSON.stringify(unsyncedTransactions);
     };
 
+    var createEmptyData = function () {
+        return {
+            balance: 0,
+            transactions: [],
+        };
+    };
+
     var retrieveLastServerData = function () {
         var json = localStorage[lastServerDataKey];
         if (json) {
@@ -111,11 +118,7 @@
                 return data;
             } catch (e) { }
         }
-        return {
-            // TODO: Consolidate into core?
-            balance: 0,
-            transactions: [],
-        };
+        return createEmptyData();
     };
     var storeLastServerData = function (data) {
         localStorage[lastServerDataKey] = JSON.stringify(data);
@@ -145,11 +148,45 @@
         return data;
     }
 
+    var compareData = function (a, b) {
+        if (a.balance !== b.balance) {
+            return false;
+        }
+
+        var ta = a.transactions;
+        var tb = b.transactions;
+
+        if (ta.length !== tb.length) {
+            return false;
+        }
+
+        var count = ta.length;
+        for (var i = 0; i < count; i++) {
+            var x = ta[i];
+            var y = tb[i];
+            if (x.amount !== y.amount || x.description !== y.description) {
+                return false;
+            }
+            var dx = x.date;
+            var dy = y.date;
+            if (dx.year() !== dy.year() || dx.month() !== dy.month() || dx.day() !== dy.day()) {
+                return false;
+            }
+        }
+
+        return true;
+    };
+
+    var lastData = createEmptyData();
     var updateUI = function () {
         var data = retrieveAndMergeData();
-        // TODO: Optimizations (e.g. checking for changes)
-        balanceUpdated(data.balance);
-        transactionsUpdated(data.transactions);
+
+        // Only update the UI if something's changed
+        if (!compareData(data, lastData)) {
+            balanceUpdated(data.balance);
+            transactionsUpdated(data.transactions);
+            lastData = data;
+        }
     };
 
     var addNewTransaction = function (description, amount) {
@@ -194,9 +231,9 @@
     };
 
     var syncData = function () {
+        // TODO: A progress indicator would be nice...
         var unsyncedTransactions = retrieveUnsyncedTransactions();
         if (unsyncedTransactions.length > 0) {
-            // TODO: Update view even in case of failure!
             $.ajax({
                 type: 'POST',
                 url: budgetTrackerCore.transactionsPath,
