@@ -1,9 +1,7 @@
 ﻿$(function () {
     // Constants
     var currencySymbol = '$';
-    // TODO: Store these in a single "lastServerData" object?
-    var lastServerBalanceKey = 'lastServerBalance';
-    var lastServerTransactionsKey = 'lastServerTransactions';
+    var lastServerDataKey = 'lastServerData';
     var unsyncedTransactionsKey = 'unsyncedTransactions';
 
     // Date helpers
@@ -78,19 +76,12 @@
         localStorage[unsyncedTransactionsKey] = JSON.stringify(unsyncedTransactions);
     };
 
-    var retrieveLastServerBalance = function () {
-        return +localStorage[lastServerBalanceKey] || 0;
-    };
-    var storeLastServerBalance = function (balance) {
-        localStorage[lastServerBalanceKey] = balance;
-    };
-
-    var retrieveTransactions = function () {
-        var transactionsJSON = localStorage[lastServerTransactionsKey];
-        var transactions;
-        if (transactionsJSON) {
+    var retrieveLastServerData = function () {
+        var json = localStorage[lastServerDataKey];
+        if (json) {
             try {
-                var transactions = JSON.parse(transactionsJSON);
+                var data = JSON.parse(json);
+                var transactions = data.transactions;
                 for (var i = 0, count = transactions.length; i < count; i++) {
                     var transaction = transactions[i];
                     if (transaction.date) {
@@ -98,27 +89,30 @@
                     }
                 }
 
-                return transactions;
+                return data;
             } catch (e) { }
         }
-        return [];
+        return {
+            // TODO: Consolidate into core?
+            balance: 0,
+            transactions: [],
+        };
     };
-    var storeLastServerTransactions = function (transactions) {
-        localStorage[lastServerTransactionsKey] = JSON.stringify(transactions);
+    var storeLastServerData = function (data) {
+        localStorage[lastServerDataKey] = JSON.stringify(data);
     };
 
     var retrieveAndMergeData = function () {
         // Get the server data
-        var serverBalance = retrieveLastServerBalance();
-        var serverTransactions = retrieveTransactions();
+        var serverData = retrieveLastServerData();
 
         // Get the client data
         var unsyncedTransactions = retrieveUnsyncedTransactions();
 
         // Merge them
         var data = {
-            balance: serverBalance,
-            transactions: serverTransactions,
+            balance: serverData.balance,
+            transactions: serverData.transactions,
         };
         var count = unsyncedTransactions.length;
         for (var i = 0; i < count; i++) {
@@ -161,9 +155,9 @@
             url: budgetTrackerCore.summaryPath,
             cache: false,
             dataType: 'json',
-        }).done(function (serverState) {
-            var balance = serverState.balance;
-            var transactions = serverState.transactions;
+        }).done(function (serverData) {
+            var balance = serverData.balance;
+            var transactions = serverData.transactions;
 
             // Parse dates
             for (var i = 0, count = transactions.length; i < count; i++) {
@@ -172,8 +166,7 @@
             }
 
             // Store new state from the server
-            storeLastServerBalance(balance);
-            storeLastServerTransactions(transactions);
+            storeLastServerData(serverData);
 
             // Update UI
             setOnline();
