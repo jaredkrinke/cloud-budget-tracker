@@ -108,7 +108,11 @@
                     description: description,
                     amount: -amount,
                 },
-                success: updateAsync,
+                success: function () {
+                    updateAsync();
+                    addDescription.val('');
+                    addAmount.val('');
+                },
                 error: showServerError,
             });
         } else {
@@ -142,7 +146,10 @@
                     description: 'Contribution',
                     amount: amount,
                 },
-                success: updateAsync,
+                success: function () {
+                    updateAsync();
+                    contributeAmount.val('');
+                },
                 error: showServerError,
             });
         } else {
