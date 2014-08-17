@@ -58,9 +58,21 @@
 
     // Server communication
     // TODO: Automatically go online/offline (and sync as needed)
-    // TODO: Animation
-    var setOnline = function () { $('#server-offline').addClass('hidden'); }
-    var setOffline = function () { $('#server-offline').removeClass('hidden'); }
+    var serverOffline = $('#server-offline').hide();
+    var online = true;
+    var setOnlineStatus = function (newOnline) {
+        if (online !== newOnline) {
+            online = newOnline;
+            var serverOffline = $('#server-offline');
+            if (online) {
+                serverOffline.slideUp();
+            } else {
+                serverOffline.slideDown();
+            }
+        }
+    };
+    var setOnline = function () { setOnlineStatus(true); }
+    var setOffline = function () { setOnlineStatus(false); }
 
     // Store/retrieve data from local storage
     var retrieveUnsyncedTransactions = function () {
