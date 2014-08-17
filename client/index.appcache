@@ -1,0 +1,15 @@
+﻿CACHE MANIFEST
+# Version: 2
+
+CACHE:
+index.html
+//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css
+//code.jquery.com/jquery-1.11.0.min.js
+//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js
+common/budget-tracker-core.js
+client.js
+
+NETWORK:
+*
+http://*
+https://*
