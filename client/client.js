@@ -104,10 +104,11 @@
             $.ajax({
                 type: 'POST',
                 url: budgetTrackerCore.transactionsPath,
-                data: {
+                contentType: "application/json",
+                data: JSON.stringify([{
                     description: description,
                     amount: -amount,
-                },
+                }]),
                 success: function () {
                     updateAsync();
                     addDescription.val('');
@@ -142,10 +143,11 @@
             $.ajax({
                 type: 'POST',
                 url: budgetTrackerCore.transactionsPath,
-                data: {
+                contentType: "application/json",
+                data: JSON.stringify([{
                     description: 'Contribution',
                     amount: amount,
-                },
+                }]),
                 success: function () {
                     updateAsync();
                     contributeAmount.val('');

@@ -70,7 +70,7 @@ var loadUserData = function (user, callback) {
             callback(
                 null,
                 data ?
-                    data
+                data
                     : {
                         _id: name,
                         balance: 0,
@@ -81,15 +81,15 @@ var loadUserData = function (user, callback) {
     });
 };
 
-var saveTransaction = function (data, transaction, callback) {
-    // Apply the change
+var addTransaction = function (data, transaction) {
     if (data.transactions.push(transaction) > budgetTrackerCore.transactionHistorySize) {
         data.transactions.shift();
     }
 
     data.balance += transaction.amount;
+};
 
-    // And save it
+var saveTransactions = function (data, callback) {
     db.update({ _id: data._id }, data, { upsert: true }, callback);
 };
 
@@ -117,16 +117,32 @@ app.route(budgetTrackerCore.summaryPath).get(function (request, response) {
 
 // Transactions
 app.route(budgetTrackerCore.transactionsPath).post(function (request, response) {
-    var body = request.body;
+    // Validate submitted transactions
+    var transactions = request.body;
+    var count = transactions.length;
+    var valid = true;
+    for (var i = 0; i < count; i++) {
+        transactions[i] = validateAndCreateTransaction(transactions[i].description, transactions[i].amount);
+        if (!transactions[i]) {
+            valid = false;
+            break;
+        }
+    }
 
-    var transaction = validateAndCreateTransaction(body.description, body.amount);
-    if (transaction) {
+    if (valid && count > 0) {
+        // Transactions are valid, so add them to the database
         loadUserData(request.user, function (error, data) {
             if (error) {
-                response.status(400);
+                response.status(500);
                 response.end();
             } else {
-                saveTransaction(data, transaction, function (error) {
+                // Add all the transactions
+                for (var i = 0; i < count; i++) {
+                    addTransaction(data, transactions[i]);
+                }
+
+                // Save the updated record
+                saveTransactions(data, function (error) {
                     if (error) {
                         response.status(400);
                     } else {
