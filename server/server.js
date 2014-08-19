@@ -1,4 +1,6 @@
-﻿var express = require('express');
+﻿var https = require('https');
+var fs = require('fs');
+var express = require('express');
 var morgan = require('morgan');
 var bodyParser = require('body-parser');
 var Datastore = require('nedb');
@@ -150,6 +152,14 @@ app.route(budgetTrackerCore.transactionsPath).post(function (request, response) 
     }
 });
 
-var server = app.listen(8888, function () {
-    console.log('Listening on port %d...', server.address().port);
-});
+// Use SSL to protect user names and passwords
+var key = fs.readFileSync(__dirname + '/budget-tracker.key');
+var cert = fs.readFileSync(__dirname + '/budget-tracker.cer');
+https.createServer(
+    {
+        key: key,
+        cert: cert,
+    },
+    app
+).listen(443);
+console.log('Listening...');
