@@ -155,11 +155,12 @@ app.route(budgetTrackerCore.transactionsPath).post(function (request, response) 
 // Use SSL to protect user names and passwords
 var key = fs.readFileSync(__dirname + '/budget-tracker.key');
 var cert = fs.readFileSync(__dirname + '/budget-tracker.cer');
+var port = process.argv.length >= 3 ? process.argv[2] : 443;
 https.createServer(
     {
         key: key,
         cert: cert,
     },
     app
-).listen(443);
-console.log('Listening...');
+).listen(port);
+console.log('Listening on port ' + port + '...');
