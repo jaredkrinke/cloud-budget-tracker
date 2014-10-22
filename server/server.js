@@ -15,6 +15,7 @@ var db = new Datastore({
     autoload: true,
 });
 
+// TODO: Index on name and categoryCanonical
 var users = new Datastore({
     filename: __dirname + budgetTrackerCore.userDatabaseName,
     autoload: true,
@@ -63,9 +64,9 @@ var validateAndCreateTransaction = function (description, amount) {
 };
 
 // Database interactions
-var loadUserData = function (user, callback) {
+var loadUserData = function (user, categoryCanonical, callback) {
     var name = user._id;
-    db.findOne({ _id: name }, function (error, data) {
+    db.findOne({ name: name, categoryCanonical: categoryCanonical }, function (error, data) {
         if (error) {
             callback(error);
         } else {
@@ -74,7 +75,9 @@ var loadUserData = function (user, callback) {
                 data ?
                 data
                     : {
-                        _id: name,
+                        name: name,
+                        categoryCanonical: categoryCanonical,
+                        category: categoryCanonical,
                         balance: 0,
                         transactions: [],
                     }
@@ -84,7 +87,7 @@ var loadUserData = function (user, callback) {
 };
 
 var saveTransactions = function (data, callback) {
-    db.update({ _id: data._id }, data, { upsert: true }, callback);
+    db.update({ name: data.name, categoryCanonical: data.categoryCanonical }, data, { upsert: true }, callback);
 };
 
 // Client (static files)
@@ -96,61 +99,72 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 // Summary
-app.route(budgetTrackerCore.summaryPath).get(function (request, response) {
-    loadUserData(request.user, function (error, data) {
-        if (error) {
-            response.status(400);
-            response.end();
-        } else {
-            // Remove any internal id
-            delete data._id;
-            response.json(data);
-        }
-    });
-});
-
-// Transactions
-app.route(budgetTrackerCore.transactionsPath).post(function (request, response) {
-    // Validate submitted transactions
-    var transactions = request.body;
-    var count = transactions.length;
-    var valid = true;
-    for (var i = 0; i < count; i++) {
-        transactions[i] = validateAndCreateTransaction(transactions[i].description, transactions[i].amount);
-        if (!transactions[i]) {
-            valid = false;
-            break;
-        }
-    }
-
-    if (valid && count > 0) {
-        // Transactions are valid, so add them to the database
-        loadUserData(request.user, function (error, data) {
+var defaultCategory = budgetTrackerCore.canonicalizePathSegment('default');
+var createSummaryHandler = function (getCategory) {
+    return function (request, response) {
+        loadUserData(request.user, getCategory(request), function (error, data) {
             if (error) {
-                response.status(500);
+                response.status(400);
                 response.end();
             } else {
-                // Add all the transactions
-                for (var i = 0; i < count; i++) {
-                    budgetTrackerCore.addTransaction(data, transactions[i]);
-                }
-
-                // Save the updated record
-                saveTransactions(data, function (error) {
-                    if (error) {
-                        response.status(400);
-                    } else {
-                        response.status(201);
-                    }
-                    response.end();
-                });
+                // Remove any internal id
+                delete data.name;
+                response.json(data);
             }
         });
-    } else {
-        response.status(400);
-        response.end();
-    }
-});
+    };
+}
+
+app.route(budgetTrackerCore.categorySummaryPath).get(createSummaryHandler(function (request) { return request.params.category; }));
+app.route(budgetTrackerCore.summaryPath).get(createSummaryHandler(function () { return defaultCategory; }));
+
+// Transactions
+var createTransactionsHandler = function (getCategory) {
+    return function (request, response) {
+        // Validate submitted transactions
+        var transactions = request.body;
+        var count = transactions.length;
+        var valid = true;
+        for (var i = 0; i < count; i++) {
+            transactions[i] = validateAndCreateTransaction(transactions[i].description, transactions[i].amount);
+            if (!transactions[i]) {
+                valid = false;
+                break;
+            }
+        }
+
+        if (valid && count > 0) {
+            // Transactions are valid, so add them to the database
+            loadUserData(request.user, getCategory(request), function (error, data) {
+                if (error) {
+                    response.status(500);
+                    response.end();
+                } else {
+                    // Add all the transactions
+                    for (var i = 0; i < count; i++) {
+                        budgetTrackerCore.addTransaction(data, transactions[i]);
+                    }
+
+                    // Save the updated record
+                    saveTransactions(data, function (error) {
+                        if (error) {
+                            response.status(400);
+                        } else {
+                            response.status(201);
+                        }
+                        response.end();
+                    });
+                }
+            });
+        } else {
+            response.status(400);
+            response.end();
+        }
+    };
+};
+
+app.route(budgetTrackerCore.categoryTransactionsPath).post(createTransactionsHandler(function (request) { return request.params.category; }));
+app.route(budgetTrackerCore.transactionsPath).post(createTransactionsHandler(function () { return defaultCategory; }));
 
 // Use SSL to protect user names and passwords
 var key = fs.readFileSync(__dirname + '/budget-tracker.key');
