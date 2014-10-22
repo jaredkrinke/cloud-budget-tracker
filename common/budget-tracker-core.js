@@ -38,6 +38,7 @@
     }
 
     exports.validateDescription = createStringValidator(descriptionMinLength, descriptionMaxLength);
+    // TODO: Need to be more strict about the category if it's going into URLs...
     exports.validateCategory = createStringValidator(categoryMinLength, categoryMaxLength);
 
     // Transactions
