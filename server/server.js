@@ -15,7 +15,7 @@ var db = new Datastore({
     autoload: true,
 });
 
-// TODO: Index on name and categoryCanonical
+// TODO: Index on name and category
 var users = new Datastore({
     filename: __dirname + budgetTrackerCore.userDatabaseName,
     autoload: true,
@@ -64,9 +64,9 @@ var validateAndCreateTransaction = function (description, amount) {
 };
 
 // Database interactions
-var loadUserData = function (user, categoryCanonical, callback) {
+var loadUserData = function (user, category, callback) {
     var name = user._id;
-    db.findOne({ name: name, categoryCanonical: categoryCanonical }, function (error, data) {
+    db.findOne({ name: name, category: category }, function (error, data) {
         if (error) {
             callback(error);
         } else {
@@ -76,8 +76,7 @@ var loadUserData = function (user, categoryCanonical, callback) {
                 data
                     : {
                         name: name,
-                        categoryCanonical: categoryCanonical,
-                        category: categoryCanonical,
+                        category: category,
                         balance: 0,
                         transactions: [],
                     }
@@ -87,7 +86,7 @@ var loadUserData = function (user, categoryCanonical, callback) {
 };
 
 var saveTransactions = function (data, callback) {
-    db.update({ name: data.name, categoryCanonical: data.categoryCanonical }, data, { upsert: true }, callback);
+    db.update({ name: data.name, category: data.category }, data, { upsert: true }, callback);
 };
 
 // Client (static files)
@@ -99,7 +98,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 // Summary
-var defaultCategory = budgetTrackerCore.canonicalizePathSegment('default');
+var defaultCategory = 'default';
 var createSummaryHandler = function (getCategory) {
     return function (request, response) {
         loadUserData(request.user, getCategory(request), function (error, data) {

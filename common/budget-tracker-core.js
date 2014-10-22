@@ -40,23 +40,6 @@
     exports.validateDescription = createStringValidator(descriptionMinLength, descriptionMaxLength);
     exports.validateCategory = createStringValidator(categoryMinLength, categoryMaxLength);
 
-    // TODO: Do I really need this?
-    var alphabet = /[a-z]/i;
-    exports.canonicalizePathSegment = function (text) {
-        var input = text.substring(0, 20);
-        var output = '';
-        for (var i = 0, count = input.length; i < count; i++) {
-            var character = input[i];
-            if (alphabet.test(character)) {
-                output += character.toLowerCase();
-            } else {
-                output += '-';
-            }
-        }
-
-        return output;
-    }
-
     // Transactions
     var transactionHistorySize = 10;
     exports.addTransaction = function (data, transaction) {
