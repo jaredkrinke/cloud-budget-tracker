@@ -1,5 +1,6 @@
 ﻿<!DOCTYPE html>
-<html lang="en" manifest="index.appcache">
+<html lang="en">
+ <!--manifest="index.appcache"-->
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Cloud Budget</title>
@@ -22,7 +23,7 @@
                 <a class="navbar-brand">Cloud Budget</a>
             </div>
 
-            <div class="collapse navbar-collapse" id="navbar">
+            <!--<div class="collapse navbar-collapse" id="navbar">
                 <form id="contribute-form" class="navbar-form navbar-right" novalidate="novalidate">
                     <div class="form-group" id="contribute-amount-group">
                         <label class="control-label" for="contribute-amount">Contribute Funds</label>
@@ -30,7 +31,7 @@
                     </div>
                     <button type="submit" class="btn btn-default">Add Contribution</button>
                 </form>
-            </div>
+            </div>-->
         </nav>
 
         <div id="server-offline" class="alert alert-block alert-warning">
@@ -43,20 +44,43 @@
             </div>
             <div class="panel-body"><h1 class="text-center" id="balance">$0.00</h1></div>
         </div>
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h5 class="panel-title">Enter Expense</h5>
+        <div class="panel-group" id="accordian">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h5 class="panel-title">
+                        <a data-toggle="collapse" data-parent="#accordian" href="#collapseAdd">Enter Expense</a>
+                    </h5>
+                </div>
+                <div id="collapseAdd" class="panel-collapse collapse in">
+                    <div class="panel-body">
+                        <form id="add-form" class="form-inline" role="form" novalidate="novalidate">
+                            <div class="form-group" id="add-description-group">
+                                <input type="text" class="form-control" placeholder="Description" id="add-description" />
+                            </div>
+                            <div class="form-group" id="add-amount-group">
+                                <input type="number" class="form-control" placeholder="Amount" id="add-amount" />
+                            </div>
+                            <button type="submit" class="btn btn-default">Add Expense</button>
+                        </form>
+                    </div>
+                </div>
             </div>
-            <div class="panel-body">
-                <form id="add-form" class="form-inline" role="form" novalidate="novalidate">
-                    <div class="form-group" id="add-description-group">
-                        <input type="text" class="form-control" placeholder="Description" id="add-description" />
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h5 class="panel-title">
+                        <a data-toggle="collapse" data-parent="#accordian" href="#collapseContribute">Add Contribution</a>
+                    </h5>
+                </div>
+                <div id="collapseContribute" class="panel-collapse collapse">
+                    <div class="panel-body">
+                        <form id="contribute-form" class="form-inline" role="form" novalidate="novalidate">
+                            <div class="form-group" id="contribute-amount-group">
+                                <input type="number" class="form-control" placeholder="Amount" id="contribute-amount" />
+                            </div>
+                            <button type="submit" class="btn btn-default">Add Contribution</button>
+                        </form>
                     </div>
-                    <div class="form-group" id="add-amount-group">
-                        <input type="number" class="form-control" placeholder="Amount" id="add-amount" />
-                    </div>
-                    <button type="submit" class="btn btn-default">Add Expense</button>
-                </form>
+                </div>
             </div>
         </div>
         <div class="panel panel-default">
