@@ -1,8 +1,8 @@
 ﻿$(function () {
     // Constants
     var currencySymbol = '$';
-    var lastServerDataKey = 'lastServerData';
-    var unsyncedTransactionsKey = 'unsyncedTransactions';
+    var lastServerDataKey = 'lastServerDataV2';
+    var unsyncedTransactionsKey = 'unsyncedTransactionsV2';
 
     // Date helpers
     Date.prototype.year = function () { return this.getFullYear(); };
@@ -100,10 +100,10 @@
         localStorage[unsyncedTransactionsKey] = JSON.stringify(unsyncedTransactions);
     };
 
+    var defaultCategory = 'Default';
     var createEmptyData = function () {
         return {
-            balance: 0,
-            transactions: []
+            categories: {}
         };
     };
 
@@ -112,11 +112,14 @@
         if (json) {
             try {
                 var data = JSON.parse(json);
-                var transactions = data.transactions;
-                for (var i = 0, count = transactions.length; i < count; i++) {
-                    var transaction = transactions[i];
-                    if (transaction.date) {
-                        transaction.date = new Date(transaction.date);
+                var categories = data.categories;
+                for (var categoryName in categories) {
+                    var transactions = categories[categoryName].transactions;
+                    for (var i = 0, count = transactions.length; i < count; i++) {
+                        var transaction = transactions[i];
+                        if (transaction.date) {
+                            transaction.date = new Date(transaction.date);
+                        }
                     }
                 }
 
@@ -131,16 +134,12 @@
 
     var retrieveAndMergeData = function () {
         // Get the server data
-        var serverData = retrieveLastServerData();
+        var data = retrieveLastServerData();
 
         // Get the client data
         var unsyncedTransactions = retrieveUnsyncedTransactions();
 
         // Merge them
-        var data = {
-            balance: serverData.balance,
-            transactions: serverData.transactions
-        };
         var count = unsyncedTransactions.length;
         for (var i = 0; i < count; i++) {
             var unsyncedTransaction = unsyncedTransactions[i];
@@ -154,28 +153,51 @@
     }
 
     var compareData = function (a, b) {
-        if (a.balance !== b.balance) {
-            return false;
-        }
-
-        var ta = a.transactions;
-        var tb = b.transactions;
-
-        if (ta.length !== tb.length) {
-            return false;
-        }
-
-        var count = ta.length;
-        for (var i = 0; i < count; i++) {
-            var x = ta[i];
-            var y = tb[i];
-            if (x.amount !== y.amount || x.description !== y.description) {
+        // Check set of categories first
+        var keys = [];
+        var ak = a.categories;
+        var bk = b.categories;
+        for (var key in ak) {
+            if (!(key in bk)) {
                 return false;
             }
-            var dx = x.date;
-            var dy = y.date;
-            if (dx.year() !== dy.year() || dx.month() !== dy.month() || dx.day() !== dy.day()) {
+            keys[key] = true;
+        }
+
+        for (var key in bk) {
+            if (!(key in ak)) {
                 return false;
+            }
+            keys[key] = true;
+        }
+
+        // Now compare the contents of each category
+        for (var key in keys) {
+            var ac = ak[key];
+            var bc = bk[key];
+            if (ac.balance !== bc.balance) {
+                return false;
+            }
+
+            var ta = ac.transactions;
+            var tb = bc.transactions;
+
+            if (ta.length !== tb.length) {
+                return false;
+            }
+
+            var count = ta.length;
+            for (var i = 0; i < count; i++) {
+                var x = ta[i];
+                var y = tb[i];
+                if (x.amount !== y.amount || x.description !== y.description) {
+                    return false;
+                }
+                var dx = x.date;
+                var dy = y.date;
+                if (dx.year() !== dy.year() || dx.month() !== dy.month() || dx.day() !== dy.day()) {
+                    return false;
+                }
             }
         }
 
@@ -188,16 +210,18 @@
 
         // Only update the UI if something's changed
         if (!compareData(data, lastData)) {
-            balanceUpdated(data.balance);
-            transactionsUpdated(data.transactions);
+            var category = data.categories[defaultCategory];
+            balanceUpdated(category ? category.balance : 0);
+            transactionsUpdated(category ? category.transactions : []);
             lastData = data;
         }
     };
 
     var addNewTransaction = function (description, amount) {
         // Store locally first
-        var unsyncedTransactions = retrieveUnsyncedTransactions();;
+        var unsyncedTransactions = retrieveUnsyncedTransactions();
         unsyncedTransactions.push({
+            category: defaultCategory,
             description: description,
             amount: amount
         });
@@ -217,13 +241,15 @@
             cache: false,
             dataType: 'json'
         }).done(function (serverData) {
-            var balance = serverData.balance;
-            var transactions = serverData.transactions;
+            var categories = serverData.categories;
+            for (var categoryName in categories) {
+                var transactions = categories[categoryName].transactions;
 
-            // Parse dates
-            for (var i = 0, count = transactions.length; i < count; i++) {
-                var transaction = transactions[i];
-                transaction.date = new Date(transaction.date);
+                // Parse dates
+                for (var i = 0, count = transactions.length; i < count; i++) {
+                    var transaction = transactions[i];
+                    transaction.date = new Date(transaction.date);
+                }
             }
 
             // Store new state from the server

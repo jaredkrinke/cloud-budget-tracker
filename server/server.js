@@ -78,10 +78,7 @@ var loadUserData = function (user, callback) {
                 data
                     : {
                         _id: name,
-                        categories: {
-                            balance: 0,
-                            transactions: []
-                        },
+                        categories: {}
                     }
                 );
         }
@@ -89,7 +86,7 @@ var loadUserData = function (user, callback) {
 };
 
 var saveTransactions = function (data, callback) {
-    db.update({ _id: data.name }, data, { upsert: true }, callback);
+    db.update({ _id: data._id }, data, { upsert: true }, callback);
 };
 
 // Client (static files)

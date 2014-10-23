@@ -50,7 +50,7 @@
         }
 
         // Insert the transaction into the category
-        var category = transaction.category;
+        var category = data.categories[transaction.category];
         if (category.transactions.push(transaction) > transactionHistorySize) {
             category.transactions.shift();
         }
