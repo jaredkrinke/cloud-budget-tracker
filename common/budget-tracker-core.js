@@ -4,8 +4,6 @@
     exports.prefix = prefix;
     exports.transactionsPath = prefix + '/transactions';
     exports.summaryPath = prefix + '/summary';
-    exports.categoryTransactionsPath = prefix + '/transactions/:category';
-    exports.categorySummaryPath = prefix + '/summary/:category';
     // TODO: Need a way to update the category's name
 
     // Internal
@@ -38,17 +36,26 @@
     }
 
     exports.validateDescription = createStringValidator(descriptionMinLength, descriptionMaxLength);
-    // TODO: Need to be more strict about the category if it's going into URLs...
     exports.validateCategory = createStringValidator(categoryMinLength, categoryMaxLength);
 
     // Transactions
     var transactionHistorySize = 10;
     exports.addTransaction = function (data, transaction) {
-        if (data.transactions.push(transaction) > transactionHistorySize) {
-            data.transactions.shift();
+        // Ensure the category exists
+        if (!(transaction.category in data.categories)) {
+            data.categories[transaction.category] = {
+                transactions: [],
+                balance: 0
+            };
         }
 
-        data.balance += transaction.amount;
+        // Insert the transaction into the category
+        var category = transaction.category;
+        if (category.transactions.push(transaction) > transactionHistorySize) {
+            category.transactions.shift();
+        }
+
+        category.balance += transaction.amount;
     };
 
 })(typeof (exports) === 'undefined' ? (budgetTrackerCore = {}) : exports);
