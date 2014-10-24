@@ -56,6 +56,20 @@
         }
     };
 
+    var currentCategory = 'Default';
+    var categories = {};
+    var categoryTemplate = $('#category-template').hide();
+    var dataUpdated = function (data) {
+        // Ensure there are menu items for each category
+        var newCategories = data.categories;
+        for (var category in newCategories) {
+            if (!(category in categories)) {
+                // Encountered a new category, create a menu item for it
+                addCategory(category);
+            }
+        }
+    };
+
     // Online/offline visual state
     var serverOffline = $('#server-offline').hide();
     var online = true;
@@ -100,7 +114,6 @@
         localStorage[unsyncedTransactionsKey] = JSON.stringify(unsyncedTransactions);
     };
 
-    var defaultCategory = 'Default';
     var createEmptyData = function () {
         return {
             categories: {}
@@ -205,12 +218,14 @@
     };
 
     var lastData = createEmptyData();
-    var updateUI = function () {
+    var updateUI = function (forceUpdate) {
         var data = retrieveAndMergeData();
 
-        // Only update the UI if something's changed
-        if (!compareData(data, lastData)) {
-            var category = data.categories[defaultCategory];
+        // Only update the UI if something's changed (or an updated has been forced)
+        if (forceUpdate || !compareData(data, lastData)) {
+            dataUpdated(data);
+
+            var category = data.categories[currentCategory];
             balanceUpdated(category ? category.balance : 0);
             transactionsUpdated(category ? category.transactions : []);
             lastData = data;
@@ -221,7 +236,7 @@
         // Store locally first
         var unsyncedTransactions = retrieveUnsyncedTransactions();
         unsyncedTransactions.push({
-            category: defaultCategory,
+            category: currentCategory,
             description: description,
             amount: amount
         });
@@ -335,6 +350,24 @@
             contributeAmountGroup.addClass('has-error');
         }
     });
+
+    var addCategory = function (category) {
+        var categoryItem = categoryTemplate.clone()
+            .insertAfter(categoryTemplate)
+            .show()
+            .find('.category-link').text(category).click(function (event) {
+                event.preventDefault();
+                currentCategory = category;
+
+                // Force an update of the UI (to reflect the new category)
+                updateUI(true);
+            });
+
+        categories[category] = true;
+    };
+
+    // Ensure the default category always exists
+    addCategory(currentCategory);
 
     // Load and display the most recently synced data
     updateUI();
