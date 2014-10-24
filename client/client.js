@@ -36,7 +36,6 @@
 
     var transactionsUpdated = function (transactions) {
         // Clear existing entries
-        // TODO: This could be more efficient (e.g. only add/remove changed entries)
         template.siblings(':visible').remove();
 
         // Add new entries
@@ -56,6 +55,7 @@
         }
     };
 
+    // TODO: Persist last used category--also make sure that we add the default category (it uses currentCategory below for now)
     var currentCategory = 'Default';
     var categories = {};
     var categoryTemplate = $('#category-template').hide();
@@ -351,15 +351,39 @@
         }
     });
 
+    var categoryAddModal = $('#category-add-modal');
+    var categoryAddModalAdd = $('#category-add-modal-add');
+    var categoryAddForm = $('#category-add-form');
+    var categoryAddName = $('#category-add-name');
+
+    $('#category-add').click(function (event) {
+        event.preventDefault();
+        categoryAddModal.modal();
+    });
+
+    var addCategorySubmit = function (event) {
+        event.preventDefault();
+        var categoryName = budgetTrackerCore.validateCategory(categoryAddName.val());
+        if (categoryName) {
+            addCategory(categoryName);
+            categoryAddModal.modal('hide');
+        }
+        // TODO: Highlight category validation errors
+    }
+
+    categoryAddForm.submit(addCategorySubmit);
+    categoryAddModalAdd.click(addCategorySubmit);
+
     var addCategory = function (category) {
         var categoryItem = categoryTemplate.clone()
-            .insertAfter(categoryTemplate)
+            .insertBefore(categoryTemplate)
             .show()
             .find('.category-link').text(category).click(function (event) {
                 event.preventDefault();
                 currentCategory = category;
 
                 // Force an update of the UI (to reflect the new category)
+                // TODO: Show the current category on the UI somewhere!
                 updateUI(true);
             });
 
@@ -376,5 +400,5 @@
     syncData();
 
     // TODO: Deleting transactions
-    // TODO: Automate monthly addition of funds?
+    // TODO: Automate addition of funds?
 });

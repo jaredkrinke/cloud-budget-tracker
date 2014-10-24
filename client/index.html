@@ -29,8 +29,8 @@
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">Category <span class="caret"></span></a>
                         <ul class="dropdown-menu" role="menu" id="category-menu">
                             <li id="category-template"><a href="#" class="category-link"></a></li>
-                            <!--<li role="presentation" class="divider"></li>
-                            <li><a href="#" id="category-add">Add Category...</a></li>-->
+                            <li role="presentation" class="divider"></li>
+                            <li><a href="#" id="category-add">Add Category...</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -107,6 +107,28 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="category-add-modal" role="dialog" aria-labelledby="category-add-modal-label" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="category-add-modal-label">Add Category</h4>
+                </div>
+                <div class="modal-body">
+                    <p class="lead">Add a new category using the form below.</p>
+                    <div class="well">Categories are separate budgets/accounts. Use the drop-down menu in the navigation bar at the top to switch between categories.</div>
+                    <form id="category-add-form" class="form-inline" role="form" novalidate="novalidate">
+                        <input type="text" class="form-control" placeholder="Category name" id="category-add-name" />
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="category-add-modal-add">Add Category</button>
+                </div>
             </div>
         </div>
     </div>
