@@ -57,8 +57,18 @@
 
     // TODO: Persist last used category--also make sure that we add the default category (it uses currentCategory below for now)
     var currentCategory = 'Default';
+    var categoryCount = 0;
     var categories = {};
     var categoryTemplate = $('#category-template').hide();
+    var balanceLabel = $('#balance-label');
+    var balanceLabelPrefix = balanceLabel.text();
+
+    var categoryUpdated = function (category) {
+        if (categoryCount > 1) {
+            balanceLabel.text(balanceLabelPrefix + ' (' + category + ')');
+        }
+    };
+
     var dataUpdated = function (data) {
         // Ensure there are menu items for each category
         var newCategories = data.categories;
@@ -381,13 +391,17 @@
             .find('.category-link').text(category).click(function (event) {
                 event.preventDefault();
                 currentCategory = category;
+                categoryUpdated(currentCategory);
 
                 // Force an update of the UI (to reflect the new category)
-                // TODO: Show the current category on the UI somewhere!
                 updateUI(true);
             });
 
         categories[category] = true;
+        categoryCount++;
+
+        // In case there are now multiple categories, updated the balance label
+        categoryUpdated(currentCategory);
     };
 
     // Ensure the default category always exists
