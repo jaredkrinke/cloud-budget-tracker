@@ -56,8 +56,7 @@
         }
     };
 
-    var defaultCategory = 'Default';
-    var currentCategory = localStorage[lastCategoryKey] || defaultCategory;
+    var currentCategory = localStorage[lastCategoryKey] || budgetTrackerCore.defaultCategory;
     var categoryCount = 0;
     var categories = {};
     var categoryTemplate = $('#category-template').hide();
@@ -410,7 +409,7 @@
     };
 
     // Ensure the default category always exists
-    addCategory(defaultCategory);
+    addCategory(budgetTrackerCore.defaultCategory);
 
     // Load and display the most recently synced data
     updateUI();

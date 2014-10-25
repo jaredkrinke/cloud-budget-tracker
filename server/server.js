@@ -71,6 +71,15 @@ var loadUserData = function (user, callback) {
         if (error) {
             callback(error);
         } else {
+            // Migrate V1 data on the fly
+            if (!data.categories) {
+                data.categories = {};
+                data.categories[budgetTrackerCore.defaultCategory] = {
+                    balance: data.balance,
+                    transactions: data.transactions
+                };
+            }
+
             callback(
                 null,
                 data ?

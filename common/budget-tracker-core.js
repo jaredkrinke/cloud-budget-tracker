@@ -4,6 +4,7 @@
     exports.prefix = prefix;
     exports.transactionsPath = prefix + '/transactions';
     exports.summaryPath = prefix + '/summary';
+    exports.defaultCategory = 'Default';
     // TODO: Need a way to update the category's name
 
     // Internal
