@@ -3,6 +3,7 @@
     var currencySymbol = '$';
     var lastServerDataKey = 'lastServerDataV2';
     var unsyncedTransactionsKey = 'unsyncedTransactionsV2';
+    var lastCategoryKey = 'lastCategoryV2';
 
     // Date helpers
     Date.prototype.year = function () { return this.getFullYear(); };
@@ -55,8 +56,8 @@
         }
     };
 
-    // TODO: Persist last used category--also make sure that we add the default category (it uses currentCategory below for now)
-    var currentCategory = 'Default';
+    var defaultCategory = 'Default';
+    var currentCategory = localStorage[lastCategoryKey] || defaultCategory;
     var categoryCount = 0;
     var categories = {};
     var categoryTemplate = $('#category-template').hide();
@@ -65,6 +66,7 @@
 
     var categoryUpdated = function (category) {
         if (categoryCount > 1) {
+            localStorage[lastCategoryKey] = category;
             balanceLabel.text(balanceLabelPrefix + ' (' + category + ')');
         }
     };
@@ -408,7 +410,7 @@
     };
 
     // Ensure the default category always exists
-    addCategory(currentCategory);
+    addCategory(defaultCategory);
 
     // Load and display the most recently synced data
     updateUI();
