@@ -365,6 +365,7 @@
     var categoryAddModalAdd = $('#category-add-modal-add');
     var categoryAddForm = $('#category-add-form');
     var categoryAddName = $('#category-add-name');
+    var categoryAddGroup = $('#category-add-group');
 
     $('#category-add').click(function (event) {
         event.preventDefault();
@@ -375,10 +376,12 @@
         event.preventDefault();
         var categoryName = budgetTrackerCore.validateCategory(categoryAddName.val());
         if (categoryName) {
+            categoryAddGroup.removeClass('has-error');
             addCategory(categoryName);
             categoryAddModal.modal('hide');
+        } else {
+            categoryAddGroup.addClass('has-error');
         }
-        // TODO: Highlight category validation errors
     }
 
     categoryAddForm.submit(addCategorySubmit);

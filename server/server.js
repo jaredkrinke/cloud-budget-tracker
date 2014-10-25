@@ -15,7 +15,6 @@ var db = new Datastore({
     autoload: true,
 });
 
-// TODO: Index on name and category
 var users = new Datastore({
     filename: __dirname + budgetTrackerCore.userDatabaseName,
     autoload: true,
