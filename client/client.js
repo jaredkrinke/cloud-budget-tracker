@@ -375,7 +375,7 @@
     var addCategorySubmit = function (event) {
         event.preventDefault();
         var categoryName = budgetTrackerCore.validateCategory(categoryAddName.val());
-        if (categoryName) {
+        if (categoryName && !(categoryName in categories)) {
             categoryAddGroup.removeClass('has-error');
             addCategory(categoryName);
             categoryAddModal.modal('hide');
